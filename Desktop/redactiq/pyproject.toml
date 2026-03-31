@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "redactiq"
+version = "0.1.0"
+description = "Smart PII Redaction Assistant with Hybrid Detection, vLLM Optimization, and Anomaly Detection"
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.1.0",
+    "transformers>=4.36.0",
+    "peft>=0.7.0",
+    "datasets>=2.16.0",
+    "vllm>=0.3.0",
+    "fastapi>=0.109.0",
+    "uvicorn>=0.27.0",
+    "faker>=22.0.0",
+    "scikit-learn>=1.4.0",
+    "numpy>=1.26.0",
+    "prometheus-client>=0.19.0",
+    "pydantic>=2.5.0",
+    "python-multipart>=0.0.6",
+    "loguru>=0.7.0",
+    "pyyaml>=6.0",
+    "httpx>=0.26.0",
+    "sentence-transformers>=2.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.23.0",
+    "black>=24.0.0",
+    "ruff>=0.2.0",
+]
+ui = [
+    "gradio>=4.15.0",
+]
+intel = [
+    "intel-extension-for-pytorch>=2.1.0",
+    "oneccl-bind-pt>=2.1.0",
+]
+
+[project.scripts]
+redactiq-server = "redactiq.serving.api:main"
+redactiq-ui = "redactiq.ui.app:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["redactiq*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
