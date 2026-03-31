@@ -1,0 +1,3 @@
+[console_scripts]
+redactiq-server = redactiq.serving.api:main
+redactiq-ui = redactiq.ui.app:main

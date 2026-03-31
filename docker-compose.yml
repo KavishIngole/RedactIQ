@@ -1,0 +1,50 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+      - "9090:9090"
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./logs:/app/logs
+    environment:
+      - REDACTIQ_MODEL_NAME=Qwen/Qwen3-8B
+      - REDACTIQ_DEVICE=cpu
+      - REDACTIQ_LOG_LEVEL=INFO
+      - OMP_NUM_THREADS=8
+      - KMP_AFFINITY=granularity=fine,compact,1,0
+    deploy:
+      resources:
+        limits:
+          memory: 32G
+        reservations:
+          memory: 16G
+
+  ui:
+    build: .
+    command: python -m redactiq.ui.app
+    ports:
+      - "7860:7860"
+    environment:
+      - REDACTIQ_DEVICE=cpu
+    depends_on:
+      - api
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - api
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=redactiq
+    depends_on:
+      - prometheus

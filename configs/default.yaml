@@ -1,0 +1,112 @@
+# RedactIQ Configuration
+# ---------------------
+
+model:
+  name: "Qwen/Qwen3-8B"  # Base model for LLM redaction
+  quantization: "bfloat16"                      # bfloat16 | int8 | float32
+  max_model_len: 2048
+  lora_adapter_path: null                        # Path to fine-tuned LoRA adapter
+
+vllm:
+  tensor_parallel_size: 1
+  gpu_memory_utilization: 0.9
+  max_num_batched_tokens: 4096
+  max_num_seqs: 64                               # Max concurrent sequences
+  enforce_eager: true                            # Disable CUDA graph on CPU
+  device: "cpu"                                  # cpu | cuda
+
+detection:
+  # Rule-based detection
+  rules:
+    enabled: true
+    confidence_threshold: 0.85
+    patterns:
+      - email
+      - phone_us
+      - phone_intl
+      - ssn
+      - ssn_standalone
+      - credit_card
+      - ip_address
+      - date_of_birth
+      - passport
+      - drivers_license
+      # India-specific patterns
+      - aadhaar
+      - aadhaar_standalone
+      - pan_card
+      - indian_passport
+      - ifsc_code
+      - phone_indian
+      - voter_id
+      - voter_id_standalone
+      - indian_dl
+      - gstin
+      - upi_id
+
+  # LLM-based detection
+  llm:
+    enabled: true
+    use_remote_api: true                              # Use remote API instead of local vLLM
+    api_url: "http://wiphackxlw49hx.cloudloka.com:8000"  # Remote Qwen3-8B endpoint
+    confidence_threshold: 0.7
+    max_tokens: 512
+    temperature: 0.1
+    entity_types:
+      - PERSON
+      - ADDRESS
+      - ORGANIZATION
+      - DATE_OF_BIRTH
+      - MEDICAL_RECORD
+      - FINANCIAL_ACCOUNT
+      - AADHAAR
+      - PAN
+      - UPI_ID
+      - VOTER_ID
+      - GSTIN
+      - IFSC
+      - INDIAN_PASSPORT
+      - INDIAN_PHONE
+      - INDIAN_DL
+
+  # Merge strategy for hybrid pipeline
+  merge_strategy: "union"  # union | intersection | llm_priority | rule_priority
+
+anomaly:
+  enabled: true
+  model_type: "llm"                  # llm | isolation_forest | one_class_svm | autoencoder
+  # LLM mode: uses the same Qwen3-8B API (no training needed)
+  # ML modes: require training via scripts/train_anomaly.py
+  api_url: "http://wiphackxlw49hx.cloudloka.com:8000"
+  max_tokens: 512
+  temperature: 0.1
+  threshold: 0.7                     # Score above which a segment is flagged
+  contamination: 0.05               # For ML modes: expected fraction of anomalies
+  embedding_model: "all-MiniLM-L6-v2"  # For ML modes only
+  retrain_interval_hours: 24
+
+redaction:
+  mode: "mask"              # mask | pseudonymize | hash
+  mask_char: "*"
+  preserve_format: true     # Keep length/structure for masked output
+  tag_format: "[{entity_type}]"  # e.g., [PERSON], [EMAIL]
+
+serving:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  cors_origins: ["*"]
+  rate_limit: 100            # Requests per minute
+
+monitoring:
+  prometheus_enabled: true
+  prometheus_port: 9090
+  log_level: "INFO"
+  log_file: "logs/redactiq.log"
+  audit_log: "logs/audit.jsonl"
+
+data:
+  train_path: "data/train.jsonl"
+  val_path: "data/val.jsonl"
+  test_path: "data/test.jsonl"
+  anomaly_baseline_path: "data/anomaly_baseline.jsonl"
